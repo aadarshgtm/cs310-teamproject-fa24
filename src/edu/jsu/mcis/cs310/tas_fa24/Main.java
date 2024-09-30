@@ -22,6 +22,8 @@ public class Main {
         // output should be "Test Badge: #C4F37EFF (Welch, Travis C)"
         
         System.err.println("Test Badge: " + b.toString());
+        // Mikes comment for github testing 
+        //Jeren added the comment 
 
     }
 
