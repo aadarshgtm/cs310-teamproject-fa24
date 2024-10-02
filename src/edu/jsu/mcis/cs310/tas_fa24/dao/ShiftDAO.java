@@ -18,7 +18,7 @@ public class ShiftDAO {
 
     // Prepared SQL statements for finding shift by ID or badgeid
     private static final String QUERY_FIND_SHIFT_BY_ID = "SELECT * FROM shift WHERE id = ?";
-    private static final String QUERY_FIND_SHIFT_BY_BADGE = "SELECT shiftid FROM employee WHERE badgeid = ?"; // Changed to badgeid
+    private static final String QUERY_FIND_SHIFT_BY_BADGE = "SELECT shiftid FROM employee WHERE badgeid = ?"; 
 
     private static final int DEFAULT_SHIFT_ID = 0;
 
