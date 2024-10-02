@@ -16,9 +16,9 @@ import java.util.HashMap;
 
 public class ShiftDAO {
 
-    // Prepared SQL statements for finding shift by ID or badge
+    // Prepared SQL statements for finding shift by ID or badgeid
     private static final String QUERY_FIND_SHIFT_BY_ID = "SELECT * FROM shift WHERE id = ?";
-    private static final String QUERY_FIND_SHIFT_BY_BADGE = "SELECT shiftid FROM employee WHERE badge = ?";
+    private static final String QUERY_FIND_SHIFT_BY_BADGE = "SELECT shiftid FROM employee WHERE badgeid = ?"; // Changed to badgeid
 
     private static final int DEFAULT_SHIFT_ID = 0;
 
@@ -84,14 +84,16 @@ public class ShiftDAO {
             if (connection.isValid(0)) {
 
                 preparedStatement = connection.prepareStatement(QUERY_FIND_SHIFT_BY_BADGE);
-                preparedStatement.setString(1, badge.getId());
+                preparedStatement.setString(1, badge.getId()); // badgeid is used here
 
                 boolean hasResults = preparedStatement.execute();
 
                 if (hasResults) {
 
                     resultSet = preparedStatement.getResultSet();
-                    shiftId = resultSet.getInt("shiftid"); // Get shift ID associated with the badge
+                    if (resultSet.next()) {
+                        shiftId = resultSet.getInt("shiftid"); // Get shift ID associated with the badgeid
+                    }
 
                 }
 
