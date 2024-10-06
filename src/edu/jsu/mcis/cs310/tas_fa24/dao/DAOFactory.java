@@ -38,6 +38,9 @@ public final class DAOFactory {
     public ShiftDAO getShiftDAO() {
         return new ShiftDAO(this); // Returns a new DAOShift object
     }
+    public DepartmentDAO getDepartmentDAO() {
+        return new DepartmentDAO(this); // assuming DepartmentDAO uses DAOFactory
+    }
 
 }
 
