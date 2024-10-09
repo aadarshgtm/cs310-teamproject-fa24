@@ -41,6 +41,9 @@ public final class DAOFactory {
     public DepartmentDAO getDepartmentDAO() {
         return new DepartmentDAO(this); // assuming DepartmentDAO uses DAOFactory
     }
-
+    public EmployeeDAO getEmployeeDAO() {
+        return new EmployeeDAO(this);
+    }
+    
 }
 
