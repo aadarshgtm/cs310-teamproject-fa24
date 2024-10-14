@@ -11,6 +11,8 @@ package edu.jsu.mcis.cs310.tas_fa24;
 import java.time.*;
 import java.util.HashMap;
 public class Shift {
+    // changing order will break code 
+    // use strings for names of fields 
     private HashMap<Integer, String> shiftData = new HashMap<>();
     private int shiftDurationMinutes, lunchDurationMinutes;
     private String shiftStartString = null;
@@ -27,6 +29,7 @@ public class Shift {
 
     // Calculates the difference between shift start and end times
     public int calculateShiftDuration(String shiftStart, String shiftEnd){
+        // restructure for app types
         LocalTime shiftStartTime = LocalTime.parse(shiftStart);
         LocalTime shiftEndTime = LocalTime.parse(shiftEnd);
 
@@ -34,6 +37,7 @@ public class Shift {
         shiftEndString = shiftEndTime.toString();
 
         Duration duration = Duration.between(shiftStartTime, shiftEndTime);
+        // look into chrono unit
         return (duration.toHoursPart() * 60) + duration.toMinutesPart();
     }
 
