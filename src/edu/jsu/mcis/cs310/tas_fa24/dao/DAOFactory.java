@@ -38,12 +38,16 @@ public final class DAOFactory {
     public ShiftDAO getShiftDAO() {
         return new ShiftDAO(this); // Returns a new DAOShift object
     }
+    public PunchDAO getPunchDAO() {
+        return new PunchDAO(this); // Returns a new DAOPunch object
+    }
     public DepartmentDAO getDepartmentDAO() {
         return new DepartmentDAO(this); // assuming DepartmentDAO uses DAOFactory
     }
     public EmployeeDAO getEmployeeDAO() {
         return new EmployeeDAO(this);
     }
+    
     
 }
 

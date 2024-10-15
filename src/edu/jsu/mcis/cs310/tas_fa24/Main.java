@@ -19,6 +19,8 @@ public class Main {
 
         Badge b = badgeDAO.find("C4F37EFF");
         
+        
+        
         // output should be "Test Badge: #C4F37EFF (Welch, Travis C)"
         
         System.err.println("Test Badge: " + b.toString());
