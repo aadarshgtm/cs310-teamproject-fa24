@@ -10,10 +10,9 @@ import java.time.LocalDateTime;
 
 /**
  * EmployeeDAO class for creating employee objects from the database
- * @author Aadarsh
  */
 
- public class EmployeeDAO {
+public class EmployeeDAO {
     private final DAOFactory daoFactory;
 
     public EmployeeDAO(DAOFactory daoFactory) {
@@ -64,7 +63,7 @@ import java.time.LocalDateTime;
         ResultSet rs = null;
 
         try (Connection connection = daoFactory.getConnection()) {
-            String query = "SELECT id FROM employee WHERE badge_id = ?";
+            String query = "SELECT id FROM employee WHERE badgeid = ?";
             stmt = connection.prepareStatement(query);
             stmt.setString(1, badge.getId());
             boolean hasResults = stmt.execute();
@@ -102,11 +101,20 @@ import java.time.LocalDateTime;
         String middlename = rs.getString("middlename");
         String lastname = rs.getString("lastname");
         LocalDateTime active = rs.getTimestamp("active").toLocalDateTime();
+
+        // Use BadgeDAO to retrieve full Badge object
+        BadgeDAO badgeDAO = new BadgeDAO(daoFactory);
+        Badge badge = badgeDAO.find(rs.getString("badgeid"));
+
         DepartmentDAO departmentDAO = new DepartmentDAO(daoFactory);
-        Department department = departmentDAO.find(rs.getInt("department_id"));
+        Department department = departmentDAO.find(rs.getInt("departmentid"));
+        
         ShiftDAO shiftDAO = new ShiftDAO(daoFactory);
-        Shift shift = shiftDAO.find(rs.getInt("shift_id"));
-        EmployeeType employeeType = EmployeeType.values()[rs.getInt("employee_type")];
-        return new Employee(id, firstname, middlename, lastname, active, department, shift, employeeType);
+        Shift shift = shiftDAO.find(rs.getInt("shiftid"));
+        
+        EmployeeType employeeType = EmployeeType.values()[rs.getInt("employeetypeid")];
+
+        // Pass Badge object into Employee constructor
+        return new Employee(id, badge, firstname, middlename, lastname, active, department, shift, employeeType);
     }
 }

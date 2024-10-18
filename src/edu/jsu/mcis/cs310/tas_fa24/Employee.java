@@ -1,10 +1,12 @@
 package edu.jsu.mcis.cs310.tas_fa24;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.time.format.DateTimeFormatter;
 
 public class Employee {
     private final int id;
+    private final Badge badge;  // Added Badge field
     private final String firstname;
     private final String middlename;
     private final String lastname;
@@ -13,8 +15,10 @@ public class Employee {
     private final Shift shift;
     private final EmployeeType employeeType;
 
-    public Employee(int id, String firstname, String middlename, String lastname, LocalDateTime active, Department department, Shift shift, EmployeeType employeeType) {
+    // Updated constructor to accept Badge object
+    public Employee(int id, Badge badge, String firstname, String middlename, String lastname, LocalDateTime active, Department department, Shift shift, EmployeeType employeeType) {
         this.id = id;
+        this.badge = badge;  // Store Badge object
         this.firstname = firstname;
         this.middlename = middlename;
         this.lastname = lastname;
@@ -26,6 +30,10 @@ public class Employee {
 
     public int getId() {
         return id;
+    }
+
+    public Badge getBadge() {  // Getter for Badge
+        return badge;
     }
 
     public String getFirstname() {
@@ -60,7 +68,7 @@ public class Employee {
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
         return String.format("ID #%d: %s, %s %s (#%s), Type: %s, Department: %s, Active: %s", 
-                             id, lastname, firstname, middlename, id, employeeType, department.getdescription(), active.format(formatter));
+                             id, lastname, firstname, middlename, badge.getId(), employeeType, department.getdescription(), active.format(formatter));
     }
 
     @Override
