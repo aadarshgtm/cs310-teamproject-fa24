@@ -12,15 +12,23 @@ package edu.jsu.mcis.cs310.tas_fa24.dao;
 import edu.jsu.mcis.cs310.tas_fa24.Badge;
 import edu.jsu.mcis.cs310.tas_fa24.Punch;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PunchDAO {
 
     // Prepared SQL statements for finding punch by ID 
     private static final String QUERY_FIND_PUNCH_BY_ID = "SELECT * FROM event WHERE id = ?";
-     
+    private static final String QUERY_LIST_PUNCHES_BY_BADGE_AND_DATE = 
+        "SELECT * FROM event WHERE badgeid = ? AND CAST(timestamp AS DATE) = ? " +
+        "UNION " +
+        "SELECT * FROM event WHERE badgeid = ? AND CAST(timestamp AS DATE) = ? " +
+        "AND punchtype = 0 LIMIT 1 " +
+        "ORDER BY timestamp ASC";
 
     private static final int DEFAULT_PUNCH_ID = 0;
 
@@ -88,6 +96,52 @@ public class PunchDAO {
 
         return punch;
 
+    }
+
+    // Retrieves a list of Punch objects for a given Badge and date
+    public List<Punch> list(Badge badge, LocalDate date) {
+        List<Punch> punchList = new ArrayList<>();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            Connection connection = daoFactory.getConnection();
+
+            if (connection.isValid(0)) {
+                preparedStatement = connection.prepareStatement(QUERY_LIST_PUNCHES_BY_BADGE_AND_DATE);
+                preparedStatement.setString(1, badge.getId());
+                preparedStatement.setDate(2, java.sql.Date.valueOf(date));
+                preparedStatement.setString(3, badge.getId());
+                preparedStatement.setDate(4, java.sql.Date.valueOf(date.plusDays(1)));
+
+                boolean hasResults = preparedStatement.execute();
+
+                if (hasResults) {
+                    resultSet = preparedStatement.getResultSet();
+
+                    while (resultSet.next()) {
+                        int id = resultSet.getInt("id");
+                        int terminalId = resultSet.getInt("terminalid");
+                        String badgeId = resultSet.getString("badgeid");
+                        Timestamp timestamp = resultSet.getTimestamp("timestamp");
+                        LocalDateTime originaltimestamp = timestamp.toInstant()
+                                                                   .atZone(ZoneId.systemDefault())
+                                                                   .toLocalDateTime();
+                        int punchtype = resultSet.getInt("punchtype");
+
+                        Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, punchtype);
+                        punchList.add(punch);
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DAOException(e.getMessage());
+        } finally {
+            closeResources(resultSet, preparedStatement);
+        }
+
+        return punchList;
     }
 
     // Utility method to close ResultSet and PreparedStatement
