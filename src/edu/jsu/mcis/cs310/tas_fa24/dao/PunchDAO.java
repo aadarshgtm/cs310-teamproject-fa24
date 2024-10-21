@@ -24,10 +24,10 @@ public class PunchDAO {
     // Prepared SQL statements for finding punch by ID 
     private static final String QUERY_FIND_PUNCH_BY_ID = "SELECT * FROM event WHERE id = ?";
     private static final String QUERY_LIST_PUNCHES_BY_BADGE_AND_DATE = 
-        "SELECT * FROM event WHERE badgeid = ? AND CAST(timestamp AS DATE) = ? " +
-        "UNION " +
-        "SELECT * FROM event WHERE badgeid = ? AND CAST(timestamp AS DATE) = ? " +
-        "AND punchtype = 0 LIMIT 1 " +
+        "SELECT * FROM event WHERE badgeid = ? AND " +
+        "(CAST(timestamp AS DATE) = ? OR " +
+        "(CAST(timestamp AS DATE) = DATE_ADD(?, INTERVAL 1 DAY) AND " +
+        "TIME(timestamp) < '06:00:00' AND eventtypeid IN (0, 2))) " +
         "ORDER BY timestamp ASC";
 
     private static final int DEFAULT_PUNCH_ID = 0;
@@ -99,8 +99,8 @@ public class PunchDAO {
     }
 
     // Retrieves a list of Punch objects for a given Badge and date
-    public List<Punch> list(Badge badge, LocalDate date) {
-        List<Punch> punchList = new ArrayList<>();
+    public ArrayList<Punch> list(Badge badge, LocalDate date) {
+        ArrayList<Punch> punchList = new ArrayList<>();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
 
@@ -111,8 +111,7 @@ public class PunchDAO {
                 preparedStatement = connection.prepareStatement(QUERY_LIST_PUNCHES_BY_BADGE_AND_DATE);
                 preparedStatement.setString(1, badge.getId());
                 preparedStatement.setDate(2, java.sql.Date.valueOf(date));
-                preparedStatement.setString(3, badge.getId());
-                preparedStatement.setDate(4, java.sql.Date.valueOf(date.plusDays(1)));
+                preparedStatement.setDate(3, java.sql.Date.valueOf(date));
 
                 boolean hasResults = preparedStatement.execute();
 
@@ -127,9 +126,9 @@ public class PunchDAO {
                         LocalDateTime originaltimestamp = timestamp.toInstant()
                                                                    .atZone(ZoneId.systemDefault())
                                                                    .toLocalDateTime();
-                        int punchtype = resultSet.getInt("punchtype");
+                        int eventtypeid = resultSet.getInt("eventtypeid");
 
-                        Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, punchtype);
+                        Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, eventtypeid);
                         punchList.add(punch);
                     }
                 }
