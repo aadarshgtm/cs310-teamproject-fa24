@@ -31,6 +31,15 @@ public class PunchDAO {
         "ORDER BY timestamp ASC";
 
     private static final int DEFAULT_PUNCH_ID = 0;
+    private static final String INSERT_PUNCH_QUERY = 
+    "INSERT INTO event (terminalid, badgeid, timestamp, eventtypeid) VALUES (?, ?, ?, ?)";
+    
+    private static final String SELECT_DEPARTMENT_TERMINAL_QUERY = 
+    "SELECT terminalid FROM department WHERE id = ?";
+    
+    private static final String SELECT_EMPLOYEE_DEPARTMENT_QUERY = 
+    "SELECT departmentid FROM employee WHERE badgeid = ?";
+
 
     private final DAOFactory daoFactory;
 
@@ -160,5 +169,112 @@ public class PunchDAO {
             }
         }
     }
+    public int create(Punch punch) {
+    int punchId = DEFAULT_PUNCH_ID;  // Default ID if fail
+    PreparedStatement employeeStmt = null;
+    PreparedStatement departmentStmt = null;
+    ResultSet resultSet = null;
+
+    try (Connection connection = daoFactory.getConnection()) {
+        if (!connection.isValid(0)) {
+            return punchId; // 
+        }
+
+        // Bypass authorization if terminal ID is zero
+        if (punch.getTerminalid() == 0) {
+            return insertPunch(connection, punch);
+        }
+
+        // Get department ID for the employee's badge
+        int departmentId = getDepartmentId(connection, punch.getBadgeBadge().getId());
+        if (departmentId == 0) {
+            return punchId;  
+        }
+
+        // Get terminal ID for the department
+        int departmentTerminalId = getDepartmentTerminalId(connection, departmentId);
+        if (departmentTerminalId == 0 || departmentTerminalId != punch.getTerminalid()) {
+            return punchId;  
+        }
+
+        // Authorized punch, proceed to insert
+        punchId = insertPunch(connection, punch);
+
+    } catch (SQLException e) {
+        throw new DAOException(e.getMessage());
+    } finally {
+        closeResources(resultSet, employeeStmt, departmentStmt);
+    }
+
+    return punchId;
+}
+
+// Helper method to get department ID
+private int getDepartmentId(Connection connection, String badgeId) throws SQLException {
+    try (PreparedStatement employeeStmt = connection.prepareStatement(SELECT_EMPLOYEE_DEPARTMENT_QUERY)) {
+        employeeStmt.setString(1, badgeId);
+        try (ResultSet resultSet = employeeStmt.executeQuery()) {
+            if (resultSet.next()) {
+                return resultSet.getInt("departmentid");
+            }
+        }
+    }
+    return 0; 
+}
+
+// Helper method to get terminal ID for a department
+private int getDepartmentTerminalId(Connection connection, int departmentId) throws SQLException {
+    try (PreparedStatement departmentStmt = connection.prepareStatement(SELECT_DEPARTMENT_TERMINAL_QUERY)) {
+        departmentStmt.setInt(1, departmentId);
+        try (ResultSet resultSet = departmentStmt.executeQuery()) {
+            if (resultSet.next()) {
+                return resultSet.getInt("terminalid");
+            }
+        }
+    }
+    return 0; 
+}
+
+// Helper method to insert punch into the database
+private int insertPunch(Connection connection, Punch punch) throws SQLException {
+    int punchId = 0;
+
+    try (PreparedStatement insertStmt = connection.prepareStatement(INSERT_PUNCH_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+        insertStmt.setInt(1, punch.getTerminalid());
+        insertStmt.setString(2, punch.getBadgeBadge().getId());
+        insertStmt.setTimestamp(3, Timestamp.valueOf(punch.getOriginaltimestamp()));
+        insertStmt.setInt(4, punch.getPunchtype());
+
+        int affectedRows = insertStmt.executeUpdate();
+        if (affectedRows == 1) {
+            try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    punchId = generatedKeys.getInt(1);
+                }
+            }
+        }
+    }
+    return punchId;
+}
+
+private void closeResources(ResultSet resultSet, PreparedStatement... statements) {
+    if (resultSet != null) {
+        try {
+            resultSet.close();
+        } catch (SQLException e) {
+            throw new DAOException(e.getMessage());
+        }
+    }
+    for (PreparedStatement statement : statements) {
+        if (statement != null) {
+            try {
+                statement.close();
+            } catch (SQLException e) {
+                throw new DAOException(e.getMessage());
+            }
+        }
+    }
+}
+
 
 }

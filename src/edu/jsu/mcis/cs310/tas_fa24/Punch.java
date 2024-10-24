@@ -13,22 +13,22 @@ import java.util.Locale;
 public class Punch {
     private int id;
     private int terminalid;
-    private String badge;
+    private Badge badge;
     private LocalDateTime originaltimestamp;
     private LocalDateTime adjustedtimestamp;
     private int punchtype;
    
-    public Punch(int terminalid, String badge, int punchtype){
+    public Punch(int terminalid,String badgeId,int punchtype1){
         this.terminalid = terminalid;
-        this.badge = badge;
+        this.badge = new Badge(badgeId, "");
         this.punchtype = punchtype;
     }
     
-    public Punch(int id, int terminalid, String badge, LocalDateTime
+    public Punch(int id, int terminalid, String badgeId, LocalDateTime
             originaltimestamp, int punchtype){
         this.id = id; 
         this.terminalid = terminalid;
-        this.badge = badge;
+        this.badge = new Badge(badgeId, "");
         this.originaltimestamp = originaltimestamp;
         this.punchtype =  punchtype;   
     }
@@ -42,6 +42,9 @@ public class Punch {
     }
 
     public String getBadge() {
+        return badge.getId();
+    }
+    public Badge getBadgeBadge(){
         return badge;
     }
 
@@ -65,8 +68,8 @@ public class Punch {
         this.terminalid = terminalid;
     }
 
-    public void setBadge(String badge) {
-        this.badge = badge;
+    public void setBadge(String badgeId) {
+        this.badge = new Badge(badgeId, "");
     }
 
     public void setOriginaltimestamp(LocalDateTime originaltimestamp) {

@@ -27,7 +27,7 @@ public class PunchCreateTest {
 
         /* Create New Punch Object */
         
-        Punch p1 = new Punch(103, badgeDAO.find("021890C0"), EventType.CLOCK_IN);
+        Punch p1 = new Punch(103, badgeDAO.find("021890C0").getId(), EventType.CLOCK_IN);
 
         /* Create Timestamp Objects */
         
@@ -35,7 +35,7 @@ public class PunchCreateTest {
 
         /* Get Punch Properties */
         
-        String badgeid = p1.getBadge().getId();
+        String badgeid = p1.getBadgeBadge().getId();
         ots = p1.getOriginaltimestamp();
         int terminalid = p1.getTerminalid();
         EventType punchtype = p1.getPunchtype();
@@ -50,7 +50,7 @@ public class PunchCreateTest {
 
         /* Compare Punches */
         
-        assertEquals(badgeid, p2.getBadge().getId());
+        assertEquals(badgeid, p2.getBadgeBadge().getId());
 
         rts = p2.getOriginaltimestamp();
 
