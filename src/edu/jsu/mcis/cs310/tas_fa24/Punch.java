@@ -115,8 +115,76 @@ public class Punch {
         return printOriginalVal;
     }
     
+    public void adjust(Shift s) {
+    LocalDateTime punchTime = this.originaltimestamp;
+    LocalDateTime shiftStart = s.getShiftStart();
+    LocalDateTime shiftStop = s.getShiftStop();
+    LocalDateTime lunchStart = s.getLunchStart();
+    LocalDateTime lunchStop = s.getLunchStop();
+    int roundInterval = s.getRoundInterval();
+    int gracePeriod = s.getGracePeriod();
+    int dockPenalty = s.getDockPenalty();
+    
+    // Adjust for "Shift Start" or "Shift Stop"
+    if (punchTime.isBefore(shiftStart) && punchTime.isAfter(shiftStart.minusMinutes(roundInterval))) {
+        this.adjustedtimestamp = shiftStart;
+        this.adjustmenttype = PunchAdjustmentType.SHIFT_START;
+    } else if (punchTime.isAfter(shiftStop) && punchTime.isBefore(shiftStop.plusMinutes(roundInterval))) {
+        this.adjustedtimestamp = shiftStop;
+        this.adjustmenttype = PunchAdjustmentType.SHIFT_STOP;
+    }
+
+    // Adjust for "Lunch Start" and "Lunch Stop"
+    else if (punchTime.isAfter(lunchStart) && punchTime.isBefore(lunchStop)) {
+        if (this.punchtype == PunchType.CLOCK_OUT) {
+            this.adjustedtimestamp = lunchStart;
+            this.adjustmenttype = PunchAdjustmentType.LUNCH_START;
+        } else if (this.punchtype == PunchType.CLOCK_IN) {
+            this.adjustedtimestamp = lunchStop;
+            this.adjustmenttype = PunchAdjustmentType.LUNCH_STOP;
+        }
+    }
+
+    // Adjust for "Grace Period"
+    else if (punchTime.isAfter(shiftStart) && punchTime.isBefore(shiftStart.plusMinutes(gracePeriod))) {
+        this.adjustedtimestamp = shiftStart;
+        this.adjustmenttype = PunchAdjustmentType.GRACE_PERIOD_START;
+    } else if (punchTime.isBefore(shiftStop) && punchTime.isAfter(shiftStop.minusMinutes(gracePeriod))) {
+        this.adjustedtimestamp = shiftStop;
+        this.adjustmenttype = PunchAdjustmentType.GRACE_PERIOD_STOP;
+    }
+
+    // Adjust for "Dock Penalty"
+    else if (punchTime.isAfter(shiftStart.plusMinutes(gracePeriod)) && punchTime.isBefore(shiftStart.plusMinutes(dockPenalty))) {
+        this.adjustedtimestamp = shiftStart.plusMinutes(dockPenalty);
+        this.adjustmenttype = PunchAdjustmentType.DOCK_START;
+    } else if (punchTime.isBefore(shiftStop.minusMinutes(gracePeriod)) && punchTime.isAfter(shiftStop.minusMinutes(dockPenalty))) {
+        this.adjustedtimestamp = shiftStop.minusMinutes(dockPenalty);
+        this.adjustmenttype = PunchAdjustmentType.DOCK_STOP;
+    }
+
+    // Interval Rounding
+    else {
+        int minute = punchTime.getMinute();
+        int interval = roundInterval;
+        int roundedMinutes = (minute + interval / 2) / interval * interval;
+        this.adjustedtimestamp = punchTime.withMinute(roundedMinutes).withSecond(0).withNano(0);
+        this.adjustmenttype = PunchAdjustmentType.INTERVAL_ROUND;
+    }
+}
+    
+    
     public String printAdjusted() {
-        return "";
+         String badgeId = getBadge();
+            String punchTypeVal = this.adjustmenttype.toString().replace("_", " ");
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                    .appendPattern("EEE MM/dd/yyyy HH:mm:ss")
+                    .toFormatter(Locale.ENGLISH);
+            String formattedDateTime = adjustedtimestamp.format(formatter);
+            String dayOfWeekUpper = formattedDateTime.substring(0, 3).toUpperCase();
+            formattedDateTime = dayOfWeekUpper + formattedDateTime.substring(3);
+
+            return "#" + badgeId + " " + punchTypeVal + ": " + formattedDateTime;
     }
 
 }
