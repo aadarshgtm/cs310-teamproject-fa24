@@ -113,30 +113,39 @@ public class ShiftDAO {
     }
 
     // Converts a ResultSet into a HashMap that represents the shift data
-    public HashMap<Integer, String> resultSetToHashMap(ResultSet resultSet) {
+public HashMap<String, String> resultSetToHashMap(ResultSet resultSet) {
+    // HashMap to hold the shift data
+    HashMap<String, String> shiftDataMap = new HashMap<>();
 
-        HashMap<Integer, String> shiftDataMap = new HashMap<>();
+    try {
+        // Get metadata from the ResultSet
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int numberOfColumns = metaData.getColumnCount();
 
-        try {
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int numberOfColumns = metaData.getColumnCount();
+        // Process only the first row of the ResultSet
+        if (resultSet.next()) {
+            // Iterate over each column
+            for (int i = 1; i <= numberOfColumns; i++) {
+                String columnName = metaData.getColumnName(i);
+                String value = resultSet.getString(columnName); // Retrieve value
 
-            while (resultSet.next()) {
-
-                // Iterate over each column and store data in the map
-                for (int i = 1; i <= numberOfColumns; i++) {
-                    String columnName = metaData.getColumnName(i);
-                    shiftDataMap.put(i - 1, resultSet.getString(columnName)); // Store column data with index key
+                // Check for null value and store accordingly
+                if (value != null) {
+                    shiftDataMap.put(columnName, value); // Store column data with column name as key
+                } else {
+                    System.out.println("Warning: Null value found for column: " + columnName);
                 }
-
             }
-
-        } catch (SQLException e) {
-            throw new DAOException(e.getMessage());
+        } else {
+            System.out.println("Warning: No results found in the ResultSet.");
         }
 
-        return shiftDataMap;
+    } catch (SQLException e) {
+        throw new DAOException("Error converting ResultSet to HashMap: " + e.getMessage());
     }
+
+    return shiftDataMap;
+}
 
     // Utility method to close ResultSet and PreparedStatement
     private void closeResources(ResultSet resultSet, PreparedStatement preparedStatement) {

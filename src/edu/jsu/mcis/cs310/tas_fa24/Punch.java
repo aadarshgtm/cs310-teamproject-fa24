@@ -17,11 +17,13 @@ public class Punch {
     private LocalDateTime originaltimestamp;
     private LocalDateTime adjustedtimestamp;
     private int punchtype;
-   
-    public Punch(int terminalid,String badgeId,int punchtype1){
+    private EventType pucnchtype1;
+   // just use eventType
+    public Punch(int terminalid,String badgeId,EventType punchtype1){
         this.terminalid = terminalid;
         this.badge = new Badge(badgeId, "");
         this.punchtype = punchtype;
+        
     }
     
     public Punch(int id, int terminalid, String badgeId, LocalDateTime
@@ -31,10 +33,14 @@ public class Punch {
         this.badge = new Badge(badgeId, "");
         this.originaltimestamp = originaltimestamp;
         this.punchtype =  punchtype;   
+        
     }
 
     public int getId() {
         return id;
+    }
+    public int getPunchType1(){
+        return punchtype;
     }
 
     public int getTerminalid() {
