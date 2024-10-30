@@ -39,6 +39,10 @@ public class PunchCreateTest {
         ots = p1.getOriginaltimestamp();
         int terminalid = p1.getTerminalid();
         EventType punchtype = p1.getPunchtype();
+        
+        //example of how to work with eventype 
+        int eventTypeAsInt = EventType.CLOCK_IN.ordinal();
+        EventType eventTypeFromInt = EventType.values()[eventTypeAsInt]; // clock-in
 
         /* Insert Punch Into Database */
         
