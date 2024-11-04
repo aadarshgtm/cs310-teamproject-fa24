@@ -202,14 +202,14 @@ public class PunchAdjustTest {
 
     /* Test cases focusing on shift 2's unique timing */
     
-    // Test case 1: Lunch start for shift 2
-    Punch p1 = punchDAO.find(5004); // Regular time near lunch
+    // Test case 1: Lunch start for shift 
+    Punch p1 = punchDAO.find(5004); 
     
     // Test case 2: Complex interval rounding case
-    Punch p2 = punchDAO.find(5463); // Should round to nearest 15
+    Punch p2 = punchDAO.find(5463); 
     
     // Test case 3: Clock out case near end of shift 2
-    Punch p3 = punchDAO.find(5541); // Tests end of shift behavior
+    Punch p3 = punchDAO.find(5541);
     
     // Test case 4: TIME OUT type (should remain unchanged)
     Punch p4 = new Punch(105, "28DC3FB8", EventType.TIME_OUT);
@@ -223,19 +223,19 @@ public class PunchAdjustTest {
 
     /* Compare Adjusted Timestamps to Expected Values */
     
-    // Case 1: Testing shift 2 lunch period
+    // Case 1: 
     assertEquals("#08D01475 CLOCK OUT: TUE 09/18/2018 21:30:27", p1.printOriginal());
     assertEquals("#08D01475 CLOCK OUT: TUE 09/18/2018 21:30:00 (None)", p1.printAdjusted());
 
-    // Case 2: Specific interval rounding case
+    // Case 2:
     assertEquals("#08D01475 CLOCK IN: SAT 09/22/2018 05:49:00", p2.printOriginal());
     assertEquals("#08D01475 CLOCK IN: SAT 09/22/2018 05:45:00 (Interval Round)", p2.printAdjusted());
 
-    // Case 3: End of shift behavior
+    // Case 3: 
     assertEquals("#08D01475 CLOCK OUT: SAT 09/22/2018 12:04:15", p3.printOriginal());
     assertEquals("#08D01475 CLOCK OUT: SAT 09/22/2018 12:00:00 (Interval Round)", p3.printAdjusted());
 
-    // Case 4: TIME OUT type should remain unchanged
+    // Case 4:
     assertEquals("#28DC3FB8 TIME OUT: TUE 09/18/2018 14:25:00", p4.printOriginal());
     assertEquals("#28DC3FB8 TIME OUT: TUE 09/18/2018 14:25:00 (None)", p4.printAdjusted());
 }
