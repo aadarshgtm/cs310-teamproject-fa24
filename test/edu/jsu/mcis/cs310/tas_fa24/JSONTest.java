@@ -33,7 +33,7 @@ public class JSONTest {
 
             /* Get Punch/Badge/Shift Objects */
             Punch p = punchDAO.find(3634);
-            Badge b = badgeDAO.find(p.getBadge().getId());
+            Badge b = badgeDAO.find(p.getBadgeBadge().getId());
             Shift s = shiftDAO.find(b);
 
             /* Get/Adjust Daily Punch List */
@@ -47,6 +47,11 @@ public class JSONTest {
             String actualJSON = DAOUtility.getPunchListAsJSON(dailypunchlist);
 
             ArrayList<HashMap<String, String>> actual = (ArrayList) Jsoner.deserialize(actualJSON);
+            
+            // debugging 
+            System.out.println("Expected JSON: " + expectedJSON);
+            System.out.println("Actual JSON: " + actualJSON);
+
 
             /* Compare to Expected JSON */
             assertEquals(expected, actual);
@@ -75,7 +80,7 @@ public class JSONTest {
 
             /* Get Punch/Badge/Shift Objects */
             Punch p = punchDAO.find(1087);
-            Badge b = badgeDAO.find(p.getBadge().getId());
+            Badge b = badgeDAO.find(p.getBadgeBadge().getId());
             Shift s = shiftDAO.find(b);
 
             /* Get/Adjust Daily Punch List */
@@ -116,7 +121,7 @@ public class JSONTest {
 
             /* Get Punch/Badge/Shift Objects */
             Punch p = punchDAO.find(4943);
-            Badge b = badgeDAO.find(p.getBadge().getId());
+            Badge b = badgeDAO.find(p.getBadgeBadge().getId());
             Shift s = shiftDAO.find(b);
 
             /* Get/Adjust Daily Punch List */
