@@ -11,15 +11,13 @@ public class Punch {
     private Badge badge;
     private LocalDateTime originaltimestamp;
     private LocalDateTime adjustedtimestamp;
-    private int punchtype;
-    private EventType punchtype1; 
+    private EventType punchtype;
     private PunchAdjustmentType adjustmenttype;
 
-    public Punch(int terminalid, String badgeId, EventType punchtype1) {
+    public Punch(int terminalid, String badgeId, EventType punchtype) {
         this.terminalid = terminalid;
         this.badge = new Badge(badgeId, "");
-        this.punchtype = punchtype1.ordinal();
-        this.punchtype1 = punchtype1;
+        this.punchtype = punchtype;
     }
 
     public Punch(int id, int terminalid, String badgeId, LocalDateTime originaltimestamp, int punchtype) {
@@ -27,17 +25,16 @@ public class Punch {
         this.terminalid = terminalid;
         this.badge = new Badge(badgeId, "");
         this.originaltimestamp = originaltimestamp;
-        this.punchtype = punchtype;
+        this.punchtype = EventType.values()[punchtype];
     }
 
     // Getters
     public int getId() { return id; }
-    public EventType getPunchType1() { return punchtype1; }
+    public EventType getPunchtype() { return punchtype; }
     public int getTerminalid() { return terminalid; }
     public String getBadge() { return badge.getId(); }
     public Badge getBadgeBadge() { return badge; }
     public LocalDateTime getOriginaltimestamp() { return originaltimestamp; }
-    public int getPunchtype() { return punchtype; }
     public LocalDateTime getAdjustedtimestamp() { return adjustedtimestamp; }
     public PunchAdjustmentType getAdjustmenttype() { return adjustmenttype; }
 
@@ -47,16 +44,15 @@ public class Punch {
     public void setBadge(String badgeId) { this.badge = new Badge(badgeId, ""); }
     public void setOriginaltimestamp(LocalDateTime originaltimestamp) { this.originaltimestamp = originaltimestamp; }
     public void setAdjustedtimestamp(LocalDateTime adjustedtimestamp) { this.adjustedtimestamp = adjustedtimestamp; }
-    public void setPunchtype(int punchtype) { this.punchtype = punchtype; }
+    public void setPunchtype(EventType punchtype) { this.punchtype = punchtype; }
     public void setAdjustmenttype(PunchAdjustmentType adjustmenttype) { this.adjustmenttype = adjustmenttype; }
 
     public String printOriginal() {
         String badgeId = getBadge();
         String punchTypeVal = switch (this.punchtype) {
-            case 0 -> "CLOCK OUT";
-            case 1 -> "CLOCK IN";
-            case 2 -> "TIME OUT";
-            default -> "Unknown type";
+            case CLOCK_OUT -> "CLOCK OUT";
+            case CLOCK_IN -> "CLOCK IN";
+            case TIME_OUT -> "TIME OUT";
         };
 
         DateTimeFormatter formatter = new DateTimeFormatterBuilder()
@@ -75,10 +71,9 @@ public class Punch {
 
         String badgeId = getBadge();
         String punchTypeVal = switch (this.punchtype) {
-            case 0 -> "CLOCK OUT";
-            case 1 -> "CLOCK IN";
-            case 2 -> "TIME OUT";
-            default -> "Unknown type";
+            case CLOCK_OUT -> "CLOCK OUT";
+            case CLOCK_IN -> "CLOCK IN";
+            case TIME_OUT -> "TIME OUT";
         };
 
         DateTimeFormatter formatter = new DateTimeFormatterBuilder()
@@ -97,7 +92,7 @@ public void adjust(Shift s) {
     this.adjustedtimestamp = this.originaltimestamp;
     
     // Handle TIME OUT
-    if (this.punchtype == 2) {
+    if (this.punchtype == EventType.TIME_OUT) {
         this.adjustedtimestamp = this.originaltimestamp;
         this.adjustmenttype = PunchAdjustmentType.NONE;
         return;
@@ -124,7 +119,7 @@ public void adjust(Shift s) {
     long minutesFromLunchStop = java.time.Duration.between(this.originaltimestamp, lunchStop).toMinutes();
 
     // CLOCK IN
-    if (this.punchtype == 1) {
+    if (this.punchtype == EventType.CLOCK_IN) {
         // Check lunch period first
         if (isWithinInterval(minutesFromLunchStop, s.getRoundingInterval())) {
             this.adjustedtimestamp = lunchStop;
@@ -153,9 +148,7 @@ public void adjust(Shift s) {
         }
     }
     // CLOCK OUT
-    // CLOCK OUT
-    // CLOCK OUT
-    else if (this.punchtype == 0) {
+    else if (this.punchtype == EventType.CLOCK_OUT) {
         // Check lunch period first
         if (isWithinInterval(minutesFromLunchStart, s.getRoundingInterval())) {
             this.adjustedtimestamp = lunchStart;
