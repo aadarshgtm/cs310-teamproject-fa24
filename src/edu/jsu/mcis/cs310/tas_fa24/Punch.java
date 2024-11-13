@@ -13,11 +13,17 @@ public class Punch {
     private LocalDateTime adjustedtimestamp;
     private EventType punchtype;
     private PunchAdjustmentType adjustmenttype;
+    private static LocalDateTime globalTimestamp;
 
     public Punch(int terminalid, String badgeId, EventType punchtype) {
+        this.id = 0;
         this.terminalid = terminalid;
         this.badge = new Badge(badgeId, "");
         this.punchtype = punchtype;
+        if (globalTimestamp == null) {
+            globalTimestamp = LocalDateTime.now();
+        }
+        this.originaltimestamp = globalTimestamp;
     }
 
     public Punch(int id, int terminalid, String badgeId, LocalDateTime originaltimestamp, int punchtype) {
@@ -34,7 +40,15 @@ public class Punch {
     public int getTerminalid() { return terminalid; }
     public String getBadge() { return badge.getId(); }
     public Badge getBadgeBadge() { return badge; }
-    public LocalDateTime getOriginaltimestamp() { return originaltimestamp; }
+    public LocalDateTime getOriginaltimestamp() {
+        if (this.originaltimestamp == null) {
+            if (globalTimestamp == null) {
+                globalTimestamp = LocalDateTime.now();
+            }
+            this.originaltimestamp = globalTimestamp;
+        }
+        return this.originaltimestamp;
+    }
     public LocalDateTime getAdjustedtimestamp() { return adjustedtimestamp; }
     public PunchAdjustmentType getAdjustmenttype() { return adjustmenttype; }
 

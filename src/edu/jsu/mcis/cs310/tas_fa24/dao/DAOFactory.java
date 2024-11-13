@@ -10,8 +10,6 @@ public final class DAOFactory {
 
     private final String url, username, password;
     
-    private Connection conn = null;
-
     public DAOFactory(String prefix) {
 
         DAOProperties properties = new DAOProperties(prefix);
@@ -20,16 +18,10 @@ public final class DAOFactory {
         this.username = properties.getProperty(PROPERTY_USERNAME);
         this.password = properties.getProperty(PROPERTY_PASSWORD);
 
-        try {
-            conn = DriverManager.getConnection(url, username, password);
-        } catch (SQLException e) {
-            throw new DAOException(e.getMessage());
-        }
-
     }
 
-    Connection getConnection() {
-        return conn;
+    Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
     }
 
     public BadgeDAO getBadgeDAO() {
