@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Locale;
+import java.time.temporal.ChronoUnit;
 
 public class Punch {
     private int id;
@@ -21,7 +22,7 @@ public class Punch {
         this.badge = new Badge(badgeId, "");
         this.punchtype = punchtype;
         if (globalTimestamp == null) {
-            globalTimestamp = LocalDateTime.now();
+            globalTimestamp = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         }
         this.originaltimestamp = globalTimestamp;
     }
@@ -43,7 +44,7 @@ public class Punch {
     public LocalDateTime getOriginaltimestamp() {
         if (this.originaltimestamp == null) {
             if (globalTimestamp == null) {
-                globalTimestamp = LocalDateTime.now();
+                globalTimestamp = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
             }
             this.originaltimestamp = globalTimestamp;
         }

@@ -21,7 +21,11 @@ public final class DAOFactory {
     }
 
     Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+        String updatedUrl = url;
+        if (!url.contains("serverTimezone")) {
+            updatedUrl += (url.contains("?") ? "&" : "?") + "serverTimezone=UTC";
+        }
+        return DriverManager.getConnection(updatedUrl, username, password);
     }
 
     public BadgeDAO getBadgeDAO() {
