@@ -211,7 +211,7 @@ public class PunchDAO {
         }
         return 0; 
     }
-
+    /*
     private void closeResources(ResultSet resultSet, PreparedStatement... statements) {
         if (resultSet != null) {
             try {
@@ -229,7 +229,9 @@ public class PunchDAO {
                 }
             }
         }
+  
     }
+    */
 
 
 }
