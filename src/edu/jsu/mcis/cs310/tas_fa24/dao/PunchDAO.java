@@ -151,6 +151,56 @@ public class PunchDAO {
 
         return punchList;
     }
+    
+    // New method to retrieve punches within a date range
+    public ArrayList<Punch> list(Badge badge, LocalDate startDate, LocalDate endDate) {
+        ArrayList<Punch> punchList = new ArrayList<>();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        String query = "SELECT * FROM event WHERE badgeid = ? AND " +
+                       "CAST(timestamp AS DATE) BETWEEN ? AND ? " +
+                       "ORDER BY timestamp ASC";
+
+        try {
+            Connection connection = daoFactory.getConnection();
+
+            if (connection.isValid(0)) {
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setString(1, badge.getId());
+                preparedStatement.setDate(2, java.sql.Date.valueOf(startDate));
+                preparedStatement.setDate(3, java.sql.Date.valueOf(endDate));
+
+                boolean hasResults = preparedStatement.execute();
+
+                if (hasResults) {
+                    resultSet = preparedStatement.getResultSet();
+
+                    while (resultSet.next()) {
+                        int id = resultSet.getInt("id");
+                        int terminalId = resultSet.getInt("terminalid");
+                        String badgeId = resultSet.getString("badgeid");
+                        Timestamp timestamp = resultSet.getTimestamp("timestamp");
+                        LocalDateTime originaltimestamp = timestamp.toInstant()
+                                                                  .atZone(ZoneId.systemDefault())
+                                                                  .toLocalDateTime();
+                        int eventtypeid = resultSet.getInt("eventtypeid");
+
+                        Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, eventtypeid);
+                        punchList.add(punch);
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DAOException(e.getMessage());
+        } finally {
+            closeResources(resultSet, preparedStatement);
+        }
+
+        return punchList;
+}
+    
 
     // Utility method to close ResultSet and PreparedStatement
     private void closeResources(ResultSet resultSet, PreparedStatement preparedStatement) {
