@@ -26,50 +26,49 @@ public class AbsenteeismTest {
     
     @Test
     public void testAbsenteeismShift1Weekday() {
-        
-        AbsenteeismDAO absenteeismDAO = daoFactory.getAbsenteeismDAO();
-        EmployeeDAO employeeDAO = daoFactory.getEmployeeDAO();
-        PunchDAO punchDAO = daoFactory.getPunchDAO();
-		
-        /* Get Punch/Employee Objects */
-        
-        Punch p = punchDAO.find(3634);
-        Employee e = employeeDAO.find(p.getBadge());
-        Shift s = e.getShift();
-        Badge b = e.getBadge();
-        
-        /* Get Pay Period Punch List */
-        
-        LocalDate ts = p.getOriginaltimestamp().toLocalDate();
-        LocalDate begin = ts.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
-        LocalDate end = begin.with(TemporalAdjusters.next(DayOfWeek.SATURDAY));
-        
-        ArrayList<Punch> punchlist = punchDAO.list(b, begin, end);
-        
-        /* Adjust Punch List */
-        
-        for (Punch punch : punchlist) {
-            punch.adjust(s);
-        }
-        
-        /* Compute Pay Period Total Absenteeism */
-        
-        BigDecimal percentage = DAOUtility.calculateAbsenteeism(punchlist, s);
-        
-        /* Insert Absenteeism Into Database */
-        
-        Absenteeism a1 = new Absenteeism(e, ts, percentage);
-        absenteeismDAO.create(a1);
-        
-        /* Retrieve Absenteeism From Database */
-        
-        Absenteeism a2 = absenteeismDAO.find(e, ts);
-        
-        /* Compare to Expected Value */
-        
-        assertEquals("#28DC3FB8 (Pay Period Starting 09-02-2018): 2.50%", a2.toString());
-        
+    
+    AbsenteeismDAO absenteeismDAO = daoFactory.getAbsenteeismDAO();
+    EmployeeDAO employeeDAO = daoFactory.getEmployeeDAO();
+    PunchDAO punchDAO = daoFactory.getPunchDAO();
+    
+    // Step 1: Get Punch
+    Punch p = punchDAO.find(3634);
+    assertNotNull("Punch with ID 3634 not found!", p);
+    
+    // Step 2: Get Employee
+    Employee e = employeeDAO.find(p.getBadge());
+    assertNotNull("Employee with badge " + p.getBadge() + " not found!", e);
+    
+    // Step 3: Get Pay Period
+    LocalDate ts = p.getOriginaltimestamp().toLocalDate();
+    LocalDate begin = ts.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+    LocalDate end = begin.with(TemporalAdjusters.next(DayOfWeek.SATURDAY));
+    
+    // Step 4: Retrieve and Adjust Punch List
+    ArrayList<Punch> punchlist = punchDAO.list(e.getBadge(), begin, end);
+    assertNotNull("Punch list is null!", punchlist);
+    assertFalse("Punch list is empty!", punchlist.isEmpty());
+    
+    for (Punch punch : punchlist) {
+        punch.adjust(e.getShift());
     }
+    
+    // Step 5: Calculate Absenteeism
+    BigDecimal percentage = DAOUtility.calculateAbsenteeism(punchlist, e.getShift());
+    System.out.println("Calculated Absenteeism: " + percentage);
+    
+    // Step 6: Insert Absenteeism
+    Absenteeism a1 = new Absenteeism(e, ts, percentage);
+    absenteeismDAO.create(a1);
+    
+    // Step 7: Retrieve and Validate Absenteeism
+    Absenteeism a2 = absenteeismDAO.find(e, ts);
+    assertNotNull("Absenteeism record not found for Employee ID " + e.getId() + ", Pay Period " + ts, a2);
+    System.out.println("Absenteeism Retrieved: " + a2);
+    
+    // Step 8: Assert Expected Value
+    assertEquals("#28DC3FB8 (Pay Period Starting 09-02-2018): 2.50%", a2.toString());
+}
     
     @Test
     public void testAbsenteeismShift1Weekend() {
