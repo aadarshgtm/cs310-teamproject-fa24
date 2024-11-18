@@ -94,6 +94,44 @@ public class EmployeeDAO {
         }
         return employee;
     }
+    public Employee find(String badgeId) {
+        Employee employee = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try (Connection connection = daoFactory.getConnection()) {
+            String query = "SELECT id FROM employee WHERE badgeid = ?";
+            stmt = connection.prepareStatement(query);
+            stmt.setString(1, badgeId);
+            boolean hasResults = stmt.execute();
+
+            if (hasResults) {
+                rs = stmt.getResultSet();
+                if (rs.next()) {
+                    employee = find(rs.getInt("id"));  // Use the existing find method for employee ID
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException(e.getMessage());
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+        }
+        return employee;
+    }
+    // added by @Jeren Tolegova since AbsenteeismTest refers to this method
 
     private Employee mapRowToEmployee(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
