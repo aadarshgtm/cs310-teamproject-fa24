@@ -50,61 +50,33 @@ public class PunchDAO {
 
     // Finds and returns a Punch object by its ID
     public Punch find(int punchId) {
-
         Punch punch = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        
-        int id = 0;
-        int terminalId = 0;
-        String badgeId = "";
-        LocalDateTime originaltimestamp = null;
-        int punchtype = 0;
 
-        try {
-
-            Connection connection = daoFactory.getConnection();
-
-            if (connection.isValid(0)) {
-
-                preparedStatement = connection.prepareStatement(QUERY_FIND_PUNCH_BY_ID);
-                preparedStatement.setInt(1, punchId);
-
-                boolean hasResults = preparedStatement.execute();
-
-                if (hasResults) {
-                    resultSet = preparedStatement.getResultSet();
-    
+        try (Connection connection = daoFactory.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(QUERY_FIND_PUNCH_BY_ID)) {
+            
+            preparedStatement.setInt(1, punchId);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    int id = resultSet.getInt(1);
+                    int terminalId = resultSet.getInt(2);
+                    String badgeId = resultSet.getString(3);
                     
-                    if (resultSet.next()) {
-                        id = resultSet.getInt(1);
-                        terminalId = resultSet.getInt(2);
-                        badgeId = resultSet.getString(3);
-                        Timestamp timestamp = resultSet.getTimestamp(4);
-                        originaltimestamp = timestamp.toInstant()
-                                                     .atZone(ZoneId.systemDefault())
-                                                     .toLocalDateTime();
-                        punchtype = resultSet.getInt(5);
+                    // Get timestamp exactly as stored
+                    Timestamp dbTimestamp = resultSet.getTimestamp(4);
+                    LocalDateTime originaltimestamp = dbTimestamp.toLocalDateTime();
+                    System.out.println("Find timestamp: " + originaltimestamp);
+                    
+                    int punchtype = resultSet.getInt(5);
 
-                        punch = new Punch(id, terminalId, badgeId, originaltimestamp, punchtype);
-                    }
+                    punch = new Punch(id, terminalId, badgeId, originaltimestamp, punchtype);
                 }
-
-
             }
-
         } catch (SQLException e) {
-
             throw new DAOException(e.getMessage());
-
-        } finally {
-
-            closeResources(resultSet, preparedStatement);
-
         }
 
         return punch;
-
     }
 
     // Retrieves a list of Punch objects for a given Badge and date
@@ -203,7 +175,7 @@ public class PunchDAO {
     
 
     // Utility method to close ResultSet and PreparedStatement
-    private void closeResources(ResultSet resultSet, PreparedStatement preparedStatement) {
+    private void closeResources(ResultSet resultSet, PreparedStatement... statements) {
         if (resultSet != null) {
             try {
                 resultSet.close();
@@ -211,120 +183,105 @@ public class PunchDAO {
                 throw new DAOException(e.getMessage());
             }
         }
-        if (preparedStatement != null) {
-            try {
-                preparedStatement.close();
-            } catch (SQLException e) {
-                throw new DAOException(e.getMessage());
-            }
-        }
-    }
-    public int create(Punch punch) {
-    int punchId = DEFAULT_PUNCH_ID;  // Default ID if fail
-    PreparedStatement employeeStmt = null;
-    PreparedStatement departmentStmt = null;
-    ResultSet resultSet = null;
-
-    try (Connection connection = daoFactory.getConnection()) {
-        if (!connection.isValid(0)) {
-            return punchId; // 
-        }
-
-        // Bypass authorization if terminal ID is zero
-        if (punch.getTerminalid() == 0) {
-            return insertPunch(connection, punch);
-        }
-
-        // Get department ID for the employee's badge
-        int departmentId = getDepartmentId(connection, punch.getBadgeBadge().getId());
-        if (departmentId == 0) {
-            return punchId;  
-        }
-
-        // Get terminal ID for the department
-        int departmentTerminalId = getDepartmentTerminalId(connection, departmentId);
-        if (departmentTerminalId == 0 || departmentTerminalId != punch.getTerminalid()) {
-            return punchId;  
-        }
-
-        // Authorized punch, proceed to insert
-        punchId = insertPunch(connection, punch);
-
-    } catch (SQLException e) {
-        throw new DAOException(e.getMessage());
-    } finally {
-        closeResources(resultSet, employeeStmt, departmentStmt);
-    }
-
-    return punchId;
-}
-
-// Helper method to get department ID
-private int getDepartmentId(Connection connection, String badgeId) throws SQLException {
-    try (PreparedStatement employeeStmt = connection.prepareStatement(SELECT_EMPLOYEE_DEPARTMENT_QUERY)) {
-        employeeStmt.setString(1, badgeId);
-        try (ResultSet resultSet = employeeStmt.executeQuery()) {
-            if (resultSet.next()) {
-                return resultSet.getInt("departmentid");
-            }
-        }
-    }
-    return 0; 
-}
-
-// Helper method to get terminal ID for a department
-private int getDepartmentTerminalId(Connection connection, int departmentId) throws SQLException {
-    try (PreparedStatement departmentStmt = connection.prepareStatement(SELECT_DEPARTMENT_TERMINAL_QUERY)) {
-        departmentStmt.setInt(1, departmentId);
-        try (ResultSet resultSet = departmentStmt.executeQuery()) {
-            if (resultSet.next()) {
-                return resultSet.getInt("terminalid");
-            }
-        }
-    }
-    return 0; 
-}
-
-// Helper method to insert punch into the database
-private int insertPunch(Connection connection, Punch punch) throws SQLException {
-    int punchId = 0;
-
-    try (PreparedStatement insertStmt = connection.prepareStatement(INSERT_PUNCH_QUERY, Statement.RETURN_GENERATED_KEYS)) {
-        insertStmt.setInt(1, punch.getTerminalid());
-        insertStmt.setString(2, punch.getBadgeBadge().getId());
-        insertStmt.setTimestamp(3, Timestamp.valueOf(punch.getOriginaltimestamp()));
-        insertStmt.setInt(4, punch.getPunchtype());
-
-        int affectedRows = insertStmt.executeUpdate();
-        if (affectedRows == 1) {
-            try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    punchId = generatedKeys.getInt(1);
+        for (PreparedStatement statement : statements) {
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
                 }
             }
         }
     }
-    return punchId;
-}
+    public int create(Punch punch) {
+        // Store the original timestamp when create is called
+        LocalDateTime timestamp = punch.getOriginaltimestamp();
+        System.out.println("Create timestamp: " + timestamp);
 
-private void closeResources(ResultSet resultSet, PreparedStatement... statements) {
-    if (resultSet != null) {
-        try {
-            resultSet.close();
+        try (Connection connection = daoFactory.getConnection()) {
+            if (!connection.isValid(0)) {
+                return DEFAULT_PUNCH_ID;
+            }
+
+            // Use the stored timestamp for insert
+            return insertPunch(connection, punch, timestamp);
         } catch (SQLException e) {
             throw new DAOException(e.getMessage());
         }
     }
-    for (PreparedStatement statement : statements) {
-        if (statement != null) {
+
+    private int insertPunch(Connection connection, Punch punch, LocalDateTime timestamp) throws SQLException {
+        int punchId = 0;
+
+        try (PreparedStatement insertStmt = connection.prepareStatement(INSERT_PUNCH_QUERY, Statement.RETURN_GENERATED_KEYS)) {
+            insertStmt.setInt(1, punch.getTerminalid());
+            insertStmt.setString(2, punch.getBadgeBadge().getId());
+            
+            // Use the exact same timestamp from create
+            Timestamp sqlTimestamp = Timestamp.valueOf(timestamp);
+            insertStmt.setTimestamp(3, sqlTimestamp);
+            insertStmt.setInt(4, punch.getPunchtype().ordinal());
+
+            System.out.println("Insert timestamp: " + timestamp);
+
+            int affectedRows = insertStmt.executeUpdate();
+            if (affectedRows == 1) {
+                try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        punchId = generatedKeys.getInt(1);
+                    }
+                }
+            }
+        }
+        return punchId;
+    }
+
+    // Helper method to get department ID
+    private int getDepartmentId(Connection connection, String badgeId) throws SQLException {
+        try (PreparedStatement employeeStmt = connection.prepareStatement(SELECT_EMPLOYEE_DEPARTMENT_QUERY)) {
+            employeeStmt.setString(1, badgeId);
+            try (ResultSet resultSet = employeeStmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("departmentid");
+                }
+            }
+        }
+        return 0; 
+    }
+
+    // Helper method to get terminal ID for a department
+    private int getDepartmentTerminalId(Connection connection, int departmentId) throws SQLException {
+        try (PreparedStatement departmentStmt = connection.prepareStatement(SELECT_DEPARTMENT_TERMINAL_QUERY)) {
+            departmentStmt.setInt(1, departmentId);
+            try (ResultSet resultSet = departmentStmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("terminalid");
+                }
+            }
+        }
+        return 0; 
+    }
+    /*
+    private void closeResources(ResultSet resultSet, PreparedStatement... statements) {
+        if (resultSet != null) {
             try {
-                statement.close();
+                resultSet.close();
             } catch (SQLException e) {
                 throw new DAOException(e.getMessage());
             }
         }
+        for (PreparedStatement statement : statements) {
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    throw new DAOException(e.getMessage());
+                }
+            }
+        }
+  
     }
-}
+    */
 
 
 }
