@@ -4,10 +4,12 @@ import edu.jsu.mcis.cs310.tas_fa24.Punch;
 import java.time.*;
 import java.util.*;
 import java.time.temporal.ChronoUnit;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.math.BigDecimal;
+import edu.jsu.mcis.cs310.tas_fa24.Shift;
 import com.github.cliftonlabs.json_simple.Jsoner;
+import java.math.RoundingMode;
 
 
 
@@ -37,6 +39,42 @@ public final class DAOUtility {
         
         // Serialize the ArrayList to a JSON string and return it
         return Jsoner.serialize(jsonData);
+    }
+    
+    public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift shift) {
+        
+        // Calculate total scheduled minutes for the pay period
+        int scheduledMinutes = shift.getShiftDuration() - shift.getLunchDuration();
+
+        // Total accrued time in minutes within the pay period from punches
+        int totalAccruedMinutes = 0;
+
+        for (int i = 0; i < punchlist.size(); i += 2) {
+            Punch punchIn = punchlist.get(i);
+            Punch punchOut = (i + 1 < punchlist.size()) ? punchlist.get(i + 1) : null;
+
+            if (punchOut != null) {
+                LocalDateTime inTime = punchIn.getAdjustedtimestamp();
+                LocalDateTime outTime = punchOut.getAdjustedtimestamp();
+
+                // Calculate the difference in minutes between the in and out punches
+                int durationMinutes = (int) ChronoUnit.MINUTES.between(inTime, outTime);
+
+                // Subtract lunch duration if within shift hours
+                if (!inTime.toLocalTime().isAfter(shift.getLunchStart()) &&
+                    !outTime.toLocalTime().isBefore(shift.getLunchEnd())) {
+                    durationMinutes -= shift.getLunchDuration();
+                }
+
+                totalAccruedMinutes += durationMinutes;
+            }
+        }
+
+        // Calculate absenteeism as percentage
+        BigDecimal absenteeism = new BigDecimal((scheduledMinutes - totalAccruedMinutes) * 100.0 / scheduledMinutes);
+        absenteeism = absenteeism.setScale(2, RoundingMode.HALF_UP);
+        
+        return absenteeism;
     }
 }
 
