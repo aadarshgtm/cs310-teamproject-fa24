@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.format.DateTimeFormatter;
 
 public class PunchDAO {
 
@@ -62,10 +63,12 @@ public class PunchDAO {
                     int terminalId = resultSet.getInt(2);
                     String badgeId = resultSet.getString(3);
                     
-                    // Get timestamp exactly as stored
-                    Timestamp dbTimestamp = resultSet.getTimestamp(4);
-                    LocalDateTime originaltimestamp = dbTimestamp.toLocalDateTime();
-                    System.out.println("Find timestamp: " + originaltimestamp);
+                    // Format timestamp consistently
+                    String timestampStr = resultSet.getString(4);
+                    LocalDateTime originaltimestamp = LocalDateTime.parse(
+                        timestampStr.substring(0, 19),  // Take only yyyy-MM-dd HH:mm:ss part
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    );
                     
                     int punchtype = resultSet.getInt(5);
 
@@ -103,10 +106,11 @@ public class PunchDAO {
                         int id = resultSet.getInt("id");
                         int terminalId = resultSet.getInt("terminalid");
                         String badgeId = resultSet.getString("badgeid");
+                        
+                        // Changed timestamp conversion
                         Timestamp timestamp = resultSet.getTimestamp("timestamp");
-                        LocalDateTime originaltimestamp = timestamp.toInstant()
-                                                                   .atZone(ZoneId.systemDefault())
-                                                                   .toLocalDateTime();
+                        LocalDateTime originaltimestamp = timestamp.toLocalDateTime();
+                        
                         int eventtypeid = resultSet.getInt("eventtypeid");
 
                         Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, eventtypeid);
@@ -152,10 +156,11 @@ public class PunchDAO {
                         int id = resultSet.getInt("id");
                         int terminalId = resultSet.getInt("terminalid");
                         String badgeId = resultSet.getString("badgeid");
+                        
+                        // Changed timestamp conversion
                         Timestamp timestamp = resultSet.getTimestamp("timestamp");
-                        LocalDateTime originaltimestamp = timestamp.toInstant()
-                                                                  .atZone(ZoneId.systemDefault())
-                                                                  .toLocalDateTime();
+                        LocalDateTime originaltimestamp = timestamp.toLocalDateTime();
+                        
                         int eventtypeid = resultSet.getInt("eventtypeid");
 
                         Punch punch = new Punch(id, terminalId, badgeId, originaltimestamp, eventtypeid);
@@ -196,7 +201,6 @@ public class PunchDAO {
     public int create(Punch punch) {
         // Store the original timestamp when create is called
         LocalDateTime timestamp = punch.getOriginaltimestamp();
-        System.out.println("Create timestamp: " + timestamp);
 
         try (Connection connection = daoFactory.getConnection()) {
             if (!connection.isValid(0)) {
@@ -217,12 +221,11 @@ public class PunchDAO {
             insertStmt.setInt(1, punch.getTerminalid());
             insertStmt.setString(2, punch.getBadgeBadge().getId());
             
-            // Use the exact same timestamp from create
-            Timestamp sqlTimestamp = Timestamp.valueOf(timestamp);
-            insertStmt.setTimestamp(3, sqlTimestamp);
+            // Format timestamp consistently
+            String formattedTimestamp = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            insertStmt.setString(3, formattedTimestamp);
+            
             insertStmt.setInt(4, punch.getPunchtype().ordinal());
-
-            System.out.println("Insert timestamp: " + timestamp);
 
             int affectedRows = insertStmt.executeUpdate();
             if (affectedRows == 1) {
