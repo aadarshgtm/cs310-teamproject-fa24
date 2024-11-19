@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import edu.jsu.mcis.cs310.tas_fa24.Shift;
 import com.github.cliftonlabs.json_simple.Jsoner;
 import java.math.RoundingMode;
+import java.time.format.DateTimeFormatter;
 
 
 
@@ -58,29 +59,42 @@ public final class DAOUtility {
     }
     
     public static String getPunchListAsJSON(ArrayList<Punch> dailypunchlist) {
-        // Create an ArrayList to store each punch's data
         ArrayList<HashMap<String, String>> jsonData = new ArrayList<>();
         
-        // Iterate over each Punch in the list
-        for (Punch punch : dailypunchlist) {
-            // Create a HashMap to store the data for each punch
-            HashMap<String, String> punchData = new HashMap<>();
+        try {
+            for (Punch p : dailypunchlist) {
+                HashMap<String, String> punchMap = new HashMap<>();
+                
+                // Format dates using helper method
+                String originalDate = formatTimestamp(p.getOriginaltimestamp());
+                String adjustedDate = formatTimestamp(p.getAdjustedtimestamp());
+                
+                // Add to map
+                punchMap.put("originaltimestamp", originalDate);
+                punchMap.put("badgeid", p.getBadgeBadge().getId());
+                punchMap.put("adjustedtimestamp", adjustedDate);
+                punchMap.put("adjustmenttype", p.getAdjustmenttype().toString());
+                punchMap.put("terminalid", String.valueOf(p.getTerminalid()));
+                punchMap.put("id", String.valueOf(p.getId()));
+                punchMap.put("punchtype", p.getPunchtype().toString());
+                
+                jsonData.add(punchMap);
+            }
             
-            // Add punch details to the HashMap
-            punchData.put("id", String.valueOf(punch.getId()));
-            punchData.put("badgeid", punch.getBadge());
-            punchData.put("terminalid", String.valueOf(punch.getTerminalid()));
-            //punchData.put("punchtype", punch.getPunchType1().toString()); // EventType
-            punchData.put("adjustmenttype", punch.getAdjustmenttype() != null ? punch.getAdjustmenttype().toString() : "None"); // PunchAdjustmentType
-            punchData.put("originaltimestamp", punch.printOriginal());
-            punchData.put("adjustedtimestamp", punch.printAdjusted());
+            // Serialize and then escape slashes in the final JSON string
+            String jsonString = Jsoner.serialize(jsonData);
+            return jsonString.replace("/", "\\/");
             
-            // Append the populated HashMap to the ArrayList
-            jsonData.add(punchData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error creating JSON data: " + e.getMessage());
         }
-        
-        // Serialize the ArrayList to a JSON string and return it
-        return Jsoner.serialize(jsonData);
+    }
+    
+    // Helper method to format timestamps using DateTimeFormatter
+    private static String formatTimestamp(LocalDateTime timestamp) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MM/dd/yyyy HH:mm:ss");
+        return timestamp.format(formatter).toUpperCase();
     }
     
     public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift shift) {
