@@ -83,41 +83,22 @@ public final class DAOUtility {
         return Jsoner.serialize(jsonData);
     }
     
-    public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchlist, Shift shift) {
-        
-        // Calculate total scheduled minutes for the pay period
-        int scheduledMinutes = shift.getShiftDuration() - shift.getLunchDuration();
+        public static BigDecimal calculateAbsenteeism(ArrayList<Punch> punchList, Shift shift) {
+        // Formula: A% = (Scheduled - Worked) / Scheduled × 100
 
-        // Total accrued time in minutes within the pay period from punches
-        int totalAccruedMinutes = 0;
+        // Calculate the total worked minutes using a helper method
+        double workedMinutes = calculateTotalMinutes(punchList, shift);
 
-        for (int i = 0; i < punchlist.size(); i += 2) {
-            Punch punchIn = punchlist.get(i);
-            Punch punchOut = (i + 1 < punchlist.size()) ? punchlist.get(i + 1) : null;
+        // Calculate total scheduled minutes for the standard workweek (Monday to Friday)
+        int dailyScheduledMinutes = shift.getShiftDuration() - shift.getLunchDuration();
+        int weeklyScheduledMinutes = dailyScheduledMinutes * 5; // Monday to Friday
 
-            if (punchOut != null) {
-                LocalDateTime inTime = punchIn.getAdjustedtimestamp();
-                LocalDateTime outTime = punchOut.getAdjustedtimestamp();
+        // Calculate absenteeism percentage
+        double percentage = ((weeklyScheduledMinutes - workedMinutes) / weeklyScheduledMinutes) * 100;
 
-                // Calculate the difference in minutes between the in and out punches
-                int durationMinutes = (int) ChronoUnit.MINUTES.between(inTime, outTime);
-
-                // Subtract lunch duration if within shift hours
-                if (!inTime.toLocalTime().isAfter(shift.getLunchStart()) &&
-                    !outTime.toLocalTime().isBefore(shift.getLunchEnd())) {
-                    durationMinutes -= shift.getLunchDuration();
-                }
-
-                totalAccruedMinutes += durationMinutes;
-            }
-        }
-
-        // Calculate absenteeism as percentage
-        BigDecimal absenteeism = new BigDecimal((scheduledMinutes - totalAccruedMinutes) * 100.0 / scheduledMinutes);
-        absenteeism = absenteeism.setScale(2, RoundingMode.HALF_UP);
-        
-        return absenteeism;
-    }
+        // Return the result as BigDecimal with 2 decimal precision
+        return BigDecimal.valueOf(percentage).setScale(2, RoundingMode.HALF_UP);
+}
 }
 
 
