@@ -78,5 +78,15 @@ public class EmployeeFindTest {
         assertEquals("ID #93: Leist, Rodney J (#C1E4758D), Type: Temporary / Part-Time, Department: Warehouse, Active: 10/09/2015", e4.toString());
 
     }
+    @Test
+    public void testFindEmployeeInvalidID() {
+        EmployeeDAO employeeDAO = daoFactory.getEmployeeDAO();
+
+        /* Attempt to Retrieve Non-Existent Employee */
+        Employee invalidEmployee = employeeDAO.find(-1);
+
+        /* Verify Null Result */
+        assertNull(invalidEmployee);
+    }
     
 }

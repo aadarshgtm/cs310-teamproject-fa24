@@ -59,5 +59,31 @@ public class BadgeFindTest {
         assertEquals("#D2CC71D4 (Lawson, Matthew J)", b3.toString());
 
     }
-    
+    @Test
+    public void testFindInvalidBadge() {
+        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
+
+        /* Attempt to Retrieve Non-Existent Badge */
+        Badge invalidBadge = badgeDAO.find("INVALID");
+
+        /* Verify Null Result */
+        assertNull(invalidBadge);
+    }
+
+    @Test
+    public void testBadgeFieldEquality() {
+        BadgeDAO badgeDAO = daoFactory.getBadgeDAO();
+
+        /* Retrieve the Same Badge Twice */
+        Badge b1 = badgeDAO.find("12565C60");
+        Badge b2 = badgeDAO.find("12565C60");
+
+        /* Verify Equality of Badge Fields */
+        assertNotNull(b1);
+        assertNotNull(b2);
+        assertEquals(b1.getId(), b2.getId());
+        assertEquals(b1.getDescription(), b2.getDescription());
+}
+
+
 }

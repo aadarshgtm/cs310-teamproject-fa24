@@ -3,6 +3,7 @@ package edu.jsu.mcis.cs310.tas_fa24;
 import edu.jsu.mcis.cs310.tas_fa24.dao.*;
 import org.junit.*;
 import static org.junit.Assert.*;
+import java.time.format.DateTimeFormatter;
 
 public class ShiftFindTest {
 
@@ -60,5 +61,40 @@ public class ShiftFindTest {
         assertEquals("Shift 1 Early Lunch: 07:00 - 15:30 (510 minutes); Lunch: 11:30 - 12:00 (30 minutes)", s3.toString());
 
     }
+     @Test
+    public void testShiftDurations() {
+        ShiftDAO shiftDAO = daoFactory.getShiftDAO();
+
+        /* Retrieve Shift Ruleset */
+        Shift shift = shiftDAO.find(1);
+
+        /* Check Durations */
+        assertEquals(510, shift.getShiftDuration());
+        assertEquals(30, shift.getLunchDuration());
+    }
+    @Test
+    public void testShiftStartAndEndTimes() {
+        ShiftDAO shiftDAO = daoFactory.getShiftDAO();
+
+        /* Retrieve Shift Ruleset */
+        Shift shift = shiftDAO.find(2);
+
+        /* Check Shift Start and End Times */
+        assertEquals("12:00", shift.getShiftStart().format(DateTimeFormatter.ofPattern("HH:mm")));
+        assertEquals("20:30", shift.getShiftEnd().format(DateTimeFormatter.ofPattern("HH:mm")));
+    }
+
+    @Test
+    public void testLunchTimes() {
+        ShiftDAO shiftDAO = daoFactory.getShiftDAO();
+
+        /* Retrieve Shift Ruleset */
+        Shift shift = shiftDAO.find(3);
+
+        /* Check Lunch Start and End Times */
+        assertEquals("11:30", shift.getLunchStart().format(DateTimeFormatter.ofPattern("HH:mm")));
+        assertEquals("12:00", shift.getLunchEnd().format(DateTimeFormatter.ofPattern("HH:mm")));
+    }
+
 
 }

@@ -59,5 +59,29 @@ public class DepartmentFindTest {
         assertEquals("#8 (Shipping), Terminal ID: 107", d3.toString());
 
     }
+    @Test
+    public void testFindDepartmentInvalidID() {
+        DepartmentDAO departmentDAO = daoFactory.getDepartmentDAO();
+
+        /* Attempt to Retrieve Non-Existent Department */
+        Department invalidDepartment = departmentDAO.find(-1);
+
+        /* Verify Null Result */
+        assertNull(invalidDepartment);
+    }
+
+    @Test
+    public void testDepartmentEquality() {
+        DepartmentDAO departmentDAO = daoFactory.getDepartmentDAO();
+
+        /* Retrieve the Same Department Twice */
+        Department d1 = departmentDAO.find(1);
+        Department d2 = departmentDAO.find(1);
+
+        /* Verify Equality of Department Fields */
+        assertNotNull(d1);
+        assertNotNull(d2);
+        assertEquals(d1.toString(), d2.toString());
+    }
 
 }
