@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.math.BigDecimal;
 import edu.jsu.mcis.cs310.tas_fa24.Absenteeism;
 import edu.jsu.mcis.cs310.tas_fa24.Employee;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
 
 public class AbsenteeismDAO {
 
@@ -36,8 +38,10 @@ public class AbsenteeismDAO {
         Absenteeism absenteeism = null;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            
+            LocalDate begin = payPeriod.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
             stmt.setInt(1, employee.getId());
-            stmt.setDate(2, Date.valueOf(payPeriod));
+            stmt.setDate(2, Date.valueOf(begin));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
